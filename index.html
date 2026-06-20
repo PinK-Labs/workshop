@@ -267,6 +267,65 @@ header nav{display:flex;gap:6px;margin-left:auto}
 }
 .canvas-hint h2{font-size:22px;font-weight:700;color:var(--text-dim);margin-bottom:8px}
 .canvas-hint p{font-size:13px;color:var(--text-dim);opacity:.5;line-height:1.7}
+
+/* ─── CANVAS TITLE BAR ─── */
+#canvas-title-bar{
+  position:absolute;top:0;left:0;right:0;z-index:50;height:44px;
+  display:flex;align-items:center;gap:10px;padding:0 16px;
+  background:linear-gradient(to bottom,rgba(11,13,18,.88) 0%,transparent 100%);
+  pointer-events:none;
+}
+#canvas-title-display{
+  font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.3px;
+  pointer-events:auto;cursor:text;padding:4px 9px;border-radius:7px;
+  transition:background .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;
+}
+#canvas-title-display:hover{background:rgba(255,255,255,.07)}
+#canvas-title-display.ph{color:var(--text-dim);font-weight:400;font-size:13px}
+#canvas-title-input{
+  display:none;font-family:inherit;font-size:15px;font-weight:700;
+  background:var(--surface2);border:1.5px solid var(--tool);border-radius:7px;
+  color:var(--text);padding:4px 10px;outline:none;width:340px;pointer-events:auto;
+}
+#canvas-title-bar .tb-actions{
+  margin-left:auto;display:flex;gap:6px;pointer-events:auto;
+}
+
+/* ─── ZOOM CONTROLS ─── */
+#zoom-controls{
+  position:absolute;bottom:14px;right:14px;z-index:50;
+  display:flex;align-items:center;gap:3px;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px 8px;
+}
+#zoom-controls button{
+  width:24px;height:24px;border-radius:6px;border:none;
+  background:transparent;color:var(--text-mid);font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;
+  font-family:inherit;
+}
+#zoom-controls button:hover{background:var(--surface2);color:var(--text)}
+#zoom-label{
+  font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;
+  width:36px;text-align:center;cursor:pointer;user-select:none;
+}
+#zoom-label:hover{color:var(--text)}
+
+/* ─── CANVAS INNER (pan/zoom transform) ─── */
+#canvas-inner{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  transform-origin:0 0;pointer-events:none;z-index:2;
+}
+#zones-layer{position:absolute;top:0;left:0;pointer-events:none}
+.lens-zone{
+  position:absolute;top:0;height:3000px;
+  border-right:1px dashed;
+}
+.lens-zone-label{
+  position:absolute;top:50px;left:12px;
+  font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  opacity:.55;writing-mode:vertical-lr;transform:rotate(180deg);
+  line-height:1;
+}
 </style>
 </head>
 <body>
@@ -293,6 +352,10 @@ header nav{display:flex;gap:6px;margin-left:auto}
     </div>
 
     <div class="setup-divider"></div>
+    <div class="setup-label">ชื่อ Task / Topic <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">(ไม่บังคับ)</span></div>
+    <input class="setup-input" id="setup-topic" placeholder="เช่น วางแผน AI workflow สำหรับ HR team..." maxlength="80">
+
+    <div class="setup-divider"></div>
     <div class="setup-label" style="margin-bottom:4px">Supabase Config <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">(วาง Project URL + anon key)</span></div>
     <input class="setup-input mono" id="setup-url" placeholder="https://example.supabase.co">
     <input class="setup-input mono" id="setup-key" placeholder="eyJhbGciOi... (anon public key)">
@@ -301,10 +364,6 @@ header nav{display:flex;gap:6px;margin-left:auto}
     <div class="setup-note">
       ยังไม่มี Supabase?
       <a href="https://supabase.com" target="_blank">สร้างฟรีที่ supabase.com</a><br>
-      แล้ว run SQL ด้านล่างใน SQL Editor เพื่อสร้าง tables:<br><br>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-mid)">
-        ดู Console → Copy Setup SQL
-      </span>
     </div>
   </div>
 </div>
@@ -455,6 +514,17 @@ header nav{display:flex;gap:6px;margin-left:auto}
 
   <!-- CANVAS -->
   <div class="canvas-wrap" id="canvas-wrap">
+
+    <!-- Topic title bar (viewport-fixed) -->
+    <div id="canvas-title-bar">
+      <span id="canvas-title-display" class="ph" onclick="startEditTitle()">ตั้งชื่อ task / topic...</span>
+      <input id="canvas-title-input" type="text" placeholder="ชื่อ task / topic" onblur="saveTitle()" onkeydown="if(event.key==='Enter')saveTitle();if(event.key==='Escape')cancelTitle()">
+      <div class="tb-actions">
+        <button class="btn" id="lens-btn" onclick="toggleLens()" title="Toggle lens zones">⊞ Lens</button>
+      </div>
+    </div>
+
+    <!-- Edge SVG (fixed, uses DOM coordinates — auto correct with transform) -->
     <svg id="canvas-svg">
       <defs>
         <marker id="arr-trigger" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#f03e3e"/></marker>
@@ -467,10 +537,24 @@ header nav{display:flex;gap:6px;margin-left:auto}
       <g id="edges-group"></g>
       <path id="temp-edge" stroke="#4f8ef7" stroke-width="2" stroke-dasharray="6,4" fill="none"/>
     </svg>
-    <div id="canvas-nodes"></div>
+
+    <!-- Canvas inner — pan/zoom transform applied here -->
+    <div id="canvas-inner">
+      <div id="zones-layer"></div>
+      <div id="canvas-nodes"></div>
+    </div>
+
     <div class="canvas-hint" id="canvas-hint">
       <h2>Claude Cowork Business Canvas</h2>
       <p>ลาก connector, MCP, plugin และ skill จาก sidebar มาวาง<br>ต่อ port เพื่อออกแบบ workflow สำหรับธุรกิจ<br>กด Claude Pack เพื่อโหลด blueprint ตัวอย่าง</p>
+    </div>
+
+    <!-- Zoom controls (viewport-fixed bottom-right) -->
+    <div id="zoom-controls">
+      <button onclick="zoomOut()" title="Zoom out (-)">-</button>
+      <span id="zoom-label" onclick="zoomReset()" title="Reset zoom">100%</span>
+      <button onclick="zoomIn()" title="Zoom in (+)">+</button>
+      <button onclick="zoomFit()" title="Fit to view" style="font-size:12px">⊙</button>
     </div>
   </div>
 
@@ -518,6 +602,195 @@ let supabase = null;
 let channel  = null;
 const SESSION_ID = 'workshop-' + (new URLSearchParams(location.search).get('session') || 'main');
 
+// ══════════════════════════════════════════════
+//  CANVAS TRANSFORM (zoom & pan)
+// ══════════════════════════════════════════════
+const canvasTransform = {x:0, y:0, scale:1};
+let isPanning = false, panStart = null;
+let spaceDown = false;
+let lensVisible = false;
+let canvasTitle = '';
+
+function screenToCanvas(sx, sy) {
+  const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+  return {
+    x: (sx - r.left - canvasTransform.x) / canvasTransform.scale,
+    y: (sy - r.top  - canvasTransform.y) / canvasTransform.scale
+  };
+}
+
+function applyTransform() {
+  const {x,y,scale} = canvasTransform;
+  document.getElementById('canvas-inner').style.transform =
+    `translate(${x}px,${y}px) scale(${scale})`;
+  document.getElementById('zoom-label').textContent = Math.round(scale*100) + '%';
+  redrawEdges();
+}
+
+function clampScale(s){ return Math.max(0.15, Math.min(4, s)); }
+
+function zoomAt(cx, cy, factor) {
+  const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+  const px = cx - r.left, py = cy - r.top;
+  const newScale = clampScale(canvasTransform.scale * factor);
+  const sf = newScale / canvasTransform.scale;
+  canvasTransform.x = px - (px - canvasTransform.x) * sf;
+  canvasTransform.y = py - (py - canvasTransform.y) * sf;
+  canvasTransform.scale = newScale;
+  applyTransform();
+}
+
+function zoomIn()  { const r=document.getElementById('canvas-wrap').getBoundingClientRect(); zoomAt(r.left+r.width/2,r.top+r.height/2,1.2); }
+function zoomOut() { const r=document.getElementById('canvas-wrap').getBoundingClientRect(); zoomAt(r.left+r.width/2,r.top+r.height/2,1/1.2); }
+function zoomReset(){ canvasTransform.x=0;canvasTransform.y=0;canvasTransform.scale=1; applyTransform(); }
+
+function zoomFit() {
+  if (!nodes.length) { zoomReset(); return; }
+  const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+  const pad = 60;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  nodes.forEach(n=>{
+    minX=Math.min(minX,n.x); minY=Math.min(minY,n.y);
+    maxX=Math.max(maxX,n.x+180); maxY=Math.max(maxY,n.y+80);
+  });
+  const fw=r.width-pad*2, fh=r.height-pad*2;
+  const cw=maxX-minX, ch=maxY-minY;
+  const s = clampScale(Math.min(fw/cw, fh/ch, 1));
+  canvasTransform.scale = s;
+  canvasTransform.x = pad - minX*s;
+  canvasTransform.y = pad - minY*s;
+  applyTransform();
+}
+
+// Wheel zoom
+document.getElementById('canvas-wrap').addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 1/1.12;
+  zoomAt(e.clientX, e.clientY, factor);
+}, {passive:false});
+
+// Right-click / middle mouse / space+left drag pan
+let didRightPan = false;
+document.getElementById('canvas-wrap').addEventListener('mousedown', e => {
+  if (e.button === 2 || e.button === 1 || (e.button === 0 && spaceDown)) {
+    e.preventDefault();
+    isPanning = true;
+    if (e.button === 2) didRightPan = false; // reset; set true on first move
+    panStart = {x:e.clientX - canvasTransform.x, y:e.clientY - canvasTransform.y};
+    document.getElementById('canvas-wrap').style.cursor = 'grabbing';
+  }
+});
+// Suppress context menu after right-click pan
+document.getElementById('canvas-wrap').addEventListener('contextmenu', e => {
+  if (didRightPan) { e.preventDefault(); didRightPan = false; }
+});
+document.addEventListener('mousemove', e => {
+  if (!isPanning) return;
+  canvasTransform.x = e.clientX - panStart.x;
+  canvasTransform.y = e.clientY - panStart.y;
+  didRightPan = true;
+  applyTransform();
+});
+document.addEventListener('mouseup', e => {
+  if (!isPanning) return;
+  isPanning = false;
+  document.getElementById('canvas-wrap').style.cursor = spaceDown ? 'grab' : '';
+});
+document.addEventListener('keydown', e => {
+  if (e.code==='Space' && !e.target.matches('input,textarea')) {
+    e.preventDefault(); spaceDown=true;
+    document.getElementById('canvas-wrap').style.cursor='grab';
+  }
+  if (e.key==='+' || e.key==='=') zoomIn();
+  if (e.key==='-') zoomOut();
+  if (e.key==='0') zoomReset();
+  if (e.key==='f' || e.key==='F') zoomFit();
+});
+document.addEventListener('keyup', e => {
+  if (e.code==='Space') {
+    spaceDown=false;
+    if (!isPanning) document.getElementById('canvas-wrap').style.cursor='';
+  }
+});
+
+// ══════════════════════════════════════════════
+//  CANVAS TITLE
+// ══════════════════════════════════════════════
+function setCanvasTitle(title) {
+  canvasTitle = title;
+  const d = document.getElementById('canvas-title-display');
+  if (title) {
+    d.textContent = title;
+    d.classList.remove('ph');
+  } else {
+    d.textContent = 'ตั้งชื่อ task / topic...';
+    d.classList.add('ph');
+  }
+}
+
+function startEditTitle() {
+  const d = document.getElementById('canvas-title-display');
+  const inp = document.getElementById('canvas-title-input');
+  inp.value = canvasTitle;
+  d.style.display = 'none';
+  inp.style.display = 'block';
+  inp.focus(); inp.select();
+}
+
+function saveTitle() {
+  const inp = document.getElementById('canvas-title-input');
+  const d   = document.getElementById('canvas-title-display');
+  setCanvasTitle(inp.value.trim());
+  inp.style.display = 'none';
+  d.style.display   = '';
+  saveBoardState();
+}
+
+function cancelTitle() {
+  const inp = document.getElementById('canvas-title-input');
+  const d   = document.getElementById('canvas-title-display');
+  inp.style.display = 'none';
+  d.style.display   = '';
+}
+
+// ══════════════════════════════════════════════
+//  LENS ZONES
+// ══════════════════════════════════════════════
+const LENS_ZONES = [
+  {x:0,   w:220, label:'Triggers',           color:'#f03e3e'},
+  {x:220, w:280, label:'Connectors & Tools', color:'#4f8ef7'},
+  {x:500, w:260, label:'MCP & Governance',   color:'#12b981'},
+  {x:760, w:250, label:'Skills',             color:'#f59e0b'},
+  {x:1010,w:300, label:'Output',             color:'#06b6d4'},
+];
+
+function drawLensZones() {
+  const layer = document.getElementById('zones-layer');
+  layer.innerHTML = LENS_ZONES.map(z => `
+    <div class="lens-zone" style="left:${z.x}px;width:${z.w}px;
+      background:${z.color}08;border-right-color:${z.color}25;">
+      <div class="lens-zone-label" style="color:${z.color}">${z.label}</div>
+    </div>`).join('');
+}
+
+function toggleLens() {
+  lensVisible = !lensVisible;
+  const layer = document.getElementById('zones-layer');
+  const btn   = document.getElementById('lens-btn');
+  if (lensVisible) {
+    drawLensZones();
+    layer.style.display = 'block';
+    btn.style.background = 'var(--tool)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--tool)';
+  } else {
+    layer.style.display = 'none';
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }
+}
+
 let nodes  = [];   // {id,type,name,icon,x,y,el,votes,comments,owner}
 let edges  = [];   // {id,from,to}
 let peers  = {};   // peerId → {name,emoji,cursorEl}
@@ -544,6 +817,7 @@ document.querySelectorAll('.avatar-opt').forEach(el => {
 // ══════════════════════════════════════════════
 function joinWorkshop() {
   const name  = document.getElementById('setup-name').value.trim();
+  const topic = document.getElementById('setup-topic').value.trim();
   const _injectedUrl = (!_DEPLOY_SUPABASE_URL.startsWith('%%')) ? _DEPLOY_SUPABASE_URL : '';
   const _injectedKey = (!_DEPLOY_SUPABASE_KEY.startsWith('%%')) ? _DEPLOY_SUPABASE_KEY : '';
   const url   = _injectedUrl || document.getElementById('setup-url').value.trim();
@@ -554,6 +828,7 @@ function joinWorkshop() {
   ME.name = name;
 
   document.getElementById('setup-screen').style.display = 'none';
+  if (topic) setCanvasTitle(topic);
 
   if (url && key) {
     initSupabase(url, key);
@@ -614,6 +889,7 @@ async function loadBoardState() {
     if (data?.state) {
       const state = JSON.parse(data.state);
       clearCanvas(true);
+      if (state.title) setCanvasTitle(state.title);
       state.nodes?.forEach(n => createNode(n.type,n.name,n.icon,n.x,n.y,n.id,true,n.owner||'',n.votes||0));
       setTimeout(()=>{
         state.edges?.forEach(e => createEdge(e.from,e.to,e.id,true));
@@ -625,6 +901,7 @@ async function loadBoardState() {
 async function saveBoardState() {
   if (!supabase) return;
   const state = {
+    title: canvasTitle,
     nodes: nodes.map(({id,type,name,icon,x,y,owner,votes})=>({id,type,name,icon,x,y,owner,votes})),
     edges: edges.map(({id,from,to})=>({id,from,to}))
   };
@@ -688,8 +965,8 @@ function setupDragDrop() {
   cw.addEventListener('drop',e=>{
     e.preventDefault();
     if (!dragging) return;
-    const r=cw.getBoundingClientRect();
-    const x=e.clientX-r.left-80, y=e.clientY-r.top-40;
+    const cp=screenToCanvas(e.clientX,e.clientY);
+    const x=cp.x-80, y=cp.y-40;
     const id=createNode(dragging.type,dragging.name,dragging.icon,x,y);
     broadcast('node_add',{id,type:dragging.type,name:dragging.name,icon:dragging.icon,x,y,owner:ME.name});
     saveBoardState();
@@ -761,13 +1038,13 @@ function makeDraggableNode(el, id) {
   el.addEventListener('mousedown', e => {
     if (wiringFrom||e.target.classList.contains('port')||e.target.classList.contains('node-del')||e.target.classList.contains('fn-votes')) return;
     e.preventDefault();
-    const r=document.getElementById('canvas-wrap').getBoundingClientRect();
-    ox=e.clientX-r.left-parseFloat(el.style.left);
-    oy=e.clientY-r.top -parseFloat(el.style.top);
+    const cp=screenToCanvas(e.clientX,e.clientY);
+    ox=cp.x-parseFloat(el.style.left);
+    oy=cp.y-parseFloat(el.style.top);
 
     function onMove(e) {
-      const r=document.getElementById('canvas-wrap').getBoundingClientRect();
-      const x=e.clientX-r.left-ox, y=e.clientY-r.top-oy;
+      const cp=screenToCanvas(e.clientX,e.clientY);
+      const x=cp.x-ox, y=cp.y-oy;
       el.style.left=Math.max(0,x)+'px'; el.style.top=Math.max(0,y)+'px';
       const n=nodes.find(n=>n.id===id);
       if(n){n.x=x;n.y=y;}
