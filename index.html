@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Task Flow Workshop — Live</title>
+<title>Claude Cowork Business Canvas — Live</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -109,7 +109,7 @@ header nav{display:flex;gap:6px;margin-left:auto}
 
 /* ─── SIDEBAR ─── */
 .sidebar{
-  width:220px;background:var(--surface);border-right:1px solid var(--border);
+  width:270px;background:var(--surface);border-right:1px solid var(--border);
   display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;
 }
 .sidebar-section{padding:12px 12px 4px}
@@ -126,7 +126,7 @@ header nav{display:flex;gap:6px;margin-left:auto}
 .node-card:active{cursor:grabbing;opacity:.6}
 .nc-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 .nc-info .nc-name{font-size:12px;font-weight:600}
-.nc-info .nc-desc{font-size:10px;color:var(--text-dim);margin-top:1px}
+.nc-info .nc-desc{font-size:10px;color:var(--text-dim);margin-top:1px;line-height:1.35}
 
 /* ─── CANVAS ─── */
 .canvas-wrap{
@@ -138,16 +138,16 @@ header nav{display:flex;gap:6px;margin-left:auto}
   background-size:30px 30px;
   cursor:default;
 }
-#canvas-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
-#canvas-svg .edge{stroke-width:2;fill:none;stroke-linecap:round;pointer-events:stroke;cursor:pointer}
+#canvas-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto;z-index:1}
+#canvas-svg .edge{stroke-width:2;fill:none;stroke-linecap:round;pointer-events:visibleStroke;cursor:pointer}
 #canvas-svg .edge:hover{stroke-width:3.5}
-#canvas-nodes{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2}
+#canvas-nodes{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
 
 /* ─── FLOW NODE ─── */
 .flow-node{
   position:absolute;min-width:155px;
   background:var(--surface);border:1.5px solid var(--border);border-radius:12px;
-  cursor:move;transition:box-shadow .18s,border-color .18s;
+  cursor:move;pointer-events:auto;transition:box-shadow .18s,border-color .18s;
 }
 .flow-node:hover{border-color:var(--border2)}
 .flow-node.selected{border-color:var(--tool)!important;box-shadow:0 0 0 3px rgba(79,142,247,.2)}
@@ -173,11 +173,14 @@ header nav{display:flex;gap:6px;margin-left:auto}
 }
 
 /* Ports */
-.port{position:absolute;width:11px;height:11px;border-radius:50%;border:2px solid var(--bg);cursor:crosshair;z-index:10;transition:transform .12s}
-.port:hover{transform:translateY(-50%) scale(1.5)!important}
-.port-in{left:-6px;top:50%;transform:translateY(-50%)}
-.port-out{right:-6px;top:50%;transform:translateY(-50%)}
-.port-in:hover{transform:translateY(-50%) scale(1.5)}
+.port{position:absolute;width:16px;height:16px;border-radius:50%;border:2px solid var(--bg);cursor:crosshair;z-index:10;transition:transform .12s,box-shadow .12s}
+.port-in{left:-8px;top:50%;transform:translateY(-50%)}
+.port-out{right:-8px;top:50%;transform:translateY(-50%)}
+.port-out:hover{transform:translateY(-50%) scale(1.6);box-shadow:0 0 0 5px rgba(255,255,255,.15)}
+.flow-node:hover .port-out{box-shadow:0 0 6px 2px rgba(255,255,255,.2)}
+.port-in:hover{transform:translateY(-50%) scale(1.4)}
+.port.port-target{box-shadow:0 0 0 4px rgba(255,255,255,.2);animation:portPulse .8s infinite alternate}
+@keyframes portPulse{from{box-shadow:0 0 0 2px rgba(255,255,255,.15)}to{box-shadow:0 0 0 6px rgba(255,255,255,.3)}}
 
 /* delete */
 .node-del{position:absolute;top:-7px;right:-7px;width:17px;height:17px;border-radius:50%;background:var(--trigger);border:2px solid var(--bg);display:none;align-items:center;justify-content:center;font-size:10px;color:#fff;cursor:pointer;z-index:20}
@@ -212,7 +215,7 @@ header nav{display:flex;gap:6px;margin-left:auto}
 
 /* ─── RIGHT PANEL ─── */
 .right-panel{
-  width:210px;background:var(--surface);border-left:1px solid var(--border);
+  width:230px;background:var(--surface);border-left:1px solid var(--border);
   display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;
 }
 .rp-title{padding:12px 14px 9px;font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--border)}
@@ -271,8 +274,8 @@ header nav{display:flex;gap:6px;margin-left:auto}
 <!-- ── SETUP ── -->
 <div id="setup-screen">
   <div class="setup-card">
-    <div class="setup-logo">Task<span>Flow</span> Live</div>
-    <div class="setup-sub">Collaborative workshop canvas · powered by Supabase</div>
+    <div class="setup-logo">Claude<span>Cowork</span> Canvas</div>
+    <div class="setup-sub">Business connector, MCP, plugin & skill workshop · powered by Supabase</div>
 
     <div class="setup-label">ชื่อของคุณ</div>
     <input class="setup-input" id="setup-name" placeholder="เช่น Mint, Pong, Nong..." maxlength="20">
@@ -291,8 +294,8 @@ header nav{display:flex;gap:6px;margin-left:auto}
 
     <div class="setup-divider"></div>
     <div class="setup-label" style="margin-bottom:4px">Supabase Config <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">(วาง Project URL + anon key)</span></div>
-    <input class="setup-input mono" id="setup-url" placeholder="https://hnsldecqxqwbjkxkpeob.supabase.co" show="false">
-    <input class="setup-input mono" id="setup-key" placeholder="sb_publishable_MiHn8C1qAlHcCuW0WPQIJQ_Fi1EjYfg" show="false">
+    <input class="setup-input mono" id="setup-url" placeholder="https://example.supabase.co">
+    <input class="setup-input mono" id="setup-key" placeholder="eyJhbGciOi... (anon public key)">
 
     <button class="setup-btn" id="join-btn" onclick="joinWorkshop()">เข้าร่วม Workshop →</button>
     <div class="setup-note">
@@ -308,12 +311,12 @@ header nav{display:flex;gap:6px;margin-left:auto}
 
 <!-- ── MAIN APP ── -->
 <header>
-  <div class="logo">Task<span>Flow</span> Live</div>
+  <div class="logo">Claude<span>Cowork</span> Business Canvas</div>
   <div class="live-badge"><div class="live-dot"></div><span id="header-status">Connecting…</span></div>
   <div class="participants" id="participants"></div>
   <nav>
     <button class="btn" onclick="clearCanvas()">🗑 Clear</button>
-    <button class="btn" onclick="loadExample()">📋 Example</button>
+    <button class="btn" onclick="loadExample()">📋 Claude Pack</button>
     <button class="btn" onclick="exportFlow()">⬇ Export</button>
     <button class="btn primary" onclick="copyInvite()">🔗 Invite</button>
   </nav>
@@ -327,6 +330,21 @@ header nav{display:flex;gap:6px;margin-left:auto}
       <div class="node-card" draggable="true" data-type="trigger" data-name="User Input"  data-icon="💬"><div class="nc-icon" style="background:var(--trigger-bg);color:var(--trigger)">💬</div><div class="nc-info"><div class="nc-name">User Input</div><div class="nc-desc">รับข้อความ</div></div></div>
       <div class="node-card" draggable="true" data-type="trigger" data-name="Schedule"    data-icon="⏰"><div class="nc-icon" style="background:var(--trigger-bg);color:var(--trigger)">⏰</div><div class="nc-info"><div class="nc-name">Schedule</div><div class="nc-desc">ตามเวลา</div></div></div>
       <div class="node-card" draggable="true" data-type="trigger" data-name="Webhook"     data-icon="🔔"><div class="nc-icon" style="background:var(--trigger-bg);color:var(--trigger)">🔔</div><div class="nc-info"><div class="nc-name">Webhook</div><div class="nc-desc">Event จากภายนอก</div></div></div>
+      <div class="node-card" draggable="true" data-type="trigger" data-name="Claude Chat +" data-icon="+"><div class="nc-icon" style="background:var(--trigger-bg);color:var(--trigger)">+</div><div class="nc-info"><div class="nc-name">Claude Chat +</div><div class="nc-desc">เปิด Connectors จากเมนู +</div></div></div>
+      <div class="node-card" draggable="true" data-type="trigger" data-name="Customize > Connectors" data-icon="⚙"><div class="nc-icon" style="background:var(--trigger-bg);color:var(--trigger)">⚙</div><div class="nc-info"><div class="nc-name">Customize > Connectors</div><div class="nc-desc">จัดการ connector ตาม interface Claude</div></div></div>
+    </div>
+    <!-- Interface Controls -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Claude Interface</div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Connectors Directory" data-icon="▦"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">▦</div><div class="nc-info"><div class="nc-name">Connectors Directory</div><div class="nc-desc">browse by category / complete list</div></div></div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Manage Connectors" data-icon="⚙"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">⚙</div><div class="nc-info"><div class="nc-name">Manage Connectors</div><div class="nc-desc">connect, disconnect, review access</div></div></div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Per-chat Connector Toggle" data-icon="◉"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">◉</div><div class="nc-info"><div class="nc-name">Per-chat Toggle</div><div class="nc-desc">enable tools for one conversation</div></div></div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Tool Access: Auto" data-icon="A"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">A</div><div class="nc-info"><div class="nc-name">Tool Access: Auto</div><div class="nc-desc">default connector loading mode</div></div></div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Tool Access: On demand" data-icon="O"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">O</div><div class="nc-info"><div class="nc-name">Tool Access: On demand</div><div class="nc-desc">useful when 10+ connectors active</div></div></div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Search and Tools Menu" data-icon="/"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">/</div><div class="nc-info"><div class="nc-name">Search and Tools Menu</div><div class="nc-desc">disable irrelevant tools in a chat</div></div></div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Tool Approval Request" data-icon="!"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">!</div><div class="nc-info"><div class="nc-name">Tool Approval Request</div><div class="nc-desc">review before write or sensitive action</div></div></div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Interactive Inline Card" data-icon="▤"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">▤</div><div class="nc-info"><div class="nc-name">Interactive Inline Card</div><div class="nc-desc">compact connector UI in chat</div></div></div>
+      <div class="node-card" draggable="true" data-type="tool" data-name="Interactive Fullscreen" data-icon="▣"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">▣</div><div class="nc-info"><div class="nc-name">Interactive Fullscreen</div><div class="nc-desc">dashboard, task board, editor view</div></div></div>
     </div>
     <!-- Tools -->
     <div class="sidebar-section">
@@ -336,28 +354,95 @@ header nav{display:flex;gap:6px;margin-left:auto}
       <div class="node-card" draggable="true" data-type="tool" data-name="Image Gen"  data-icon="🎨"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">🎨</div><div class="nc-info"><div class="nc-name">Image Gen</div><div class="nc-desc">สร้างภาพ AI</div></div></div>
       <div class="node-card" draggable="true" data-type="tool" data-name="File Reader" data-icon="📄"><div class="nc-icon" style="background:var(--tool-bg);color:var(--tool)">📄</div><div class="nc-info"><div class="nc-name">File Reader</div><div class="nc-desc">อ่านไฟล์</div></div></div>
     </div>
+    <!-- Connectors -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Claude Connectors</div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Google Drive" data-icon="📁"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">📁</div><div class="nc-info"><div class="nc-name">Google Drive</div><div class="nc-desc">เอกสาร / policy / shared files</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Google Sheets" data-icon="▥"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">▥</div><div class="nc-info"><div class="nc-name">Google Sheets</div><div class="nc-desc">planning, tracker, ops tables</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Gmail" data-icon="✉"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">✉</div><div class="nc-info"><div class="nc-name">Gmail</div><div class="nc-desc">ค้นหา สรุป ร่างอีเมล</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Google Calendar" data-icon="📅"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">📅</div><div class="nc-info"><div class="nc-name">Google Calendar</div><div class="nc-desc">ตารางประชุม / follow-up</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Microsoft 365" data-icon="▦"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">▦</div><div class="nc-info"><div class="nc-name">Microsoft 365</div><div class="nc-desc">Outlook, Teams, SharePoint, OneDrive</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Slack" data-icon="💬"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">💬</div><div class="nc-info"><div class="nc-name">Slack</div><div class="nc-desc">channels, threads, messages</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Linear" data-icon="◩"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">◩</div><div class="nc-info"><div class="nc-name">Linear</div><div class="nc-desc">issues / product execution</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Asana" data-icon="●"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">●</div><div class="nc-info"><div class="nc-name">Asana</div><div class="nc-desc">projects / task handoff</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Jira" data-icon="◆"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">◆</div><div class="nc-info"><div class="nc-name">Jira</div><div class="nc-desc">engineering backlog</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Notion" data-icon="▣"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">▣</div><div class="nc-info"><div class="nc-name">Notion</div><div class="nc-desc">wiki / operating docs</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Confluence" data-icon="C"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">C</div><div class="nc-info"><div class="nc-name">Confluence</div><div class="nc-desc">company wiki / project pages</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="GitHub" data-icon="⌘"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">⌘</div><div class="nc-info"><div class="nc-name">GitHub</div><div class="nc-desc">repos / issues / PR context</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Salesforce" data-icon="$"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">$</div><div class="nc-info"><div class="nc-name">Salesforce</div><div class="nc-desc">accounts / pipeline / cases</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="HubSpot" data-icon="◎"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">◎</div><div class="nc-info"><div class="nc-name">HubSpot</div><div class="nc-desc">CRM / marketing / lifecycle</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="QuickBooks" data-icon="Q"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">Q</div><div class="nc-info"><div class="nc-name">QuickBooks</div><div class="nc-desc">invoices / accounting context</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="PayPal" data-icon="P"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">P</div><div class="nc-info"><div class="nc-name">PayPal</div><div class="nc-desc">payments / transaction review</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="DocuSign" data-icon="✍"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">✍</div><div class="nc-info"><div class="nc-name">DocuSign</div><div class="nc-desc">contracts / approvals</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Canva" data-icon="C"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">C</div><div class="nc-info"><div class="nc-name">Canva</div><div class="nc-desc">brand assets / campaign creative</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Figma" data-icon="F"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">F</div><div class="nc-info"><div class="nc-name">Figma</div><div class="nc-desc">design files / product copy</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Zendesk" data-icon="Z"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">Z</div><div class="nc-info"><div class="nc-name">Zendesk</div><div class="nc-desc">tickets / support macros</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Intercom" data-icon="I"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">I</div><div class="nc-info"><div class="nc-name">Intercom</div><div class="nc-desc">customer conversations</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="ServiceNow" data-icon="S"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">S</div><div class="nc-info"><div class="nc-name">ServiceNow</div><div class="nc-desc">ITSM / approvals / incidents</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Zapier" data-icon="Z"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">Z</div><div class="nc-info"><div class="nc-name">Zapier</div><div class="nc-desc">cross-app workflow actions</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Stripe" data-icon="$"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">$</div><div class="nc-info"><div class="nc-name">Stripe</div><div class="nc-desc">billing / subscriptions / revenue</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Custom Business SaaS Connector" data-icon="+"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">+</div><div class="nc-info"><div class="nc-name">Custom Business SaaS</div><div class="nc-desc">any directory or MCP-compatible app</div></div></div>
+    </div>
     <!-- Plugins -->
     <div class="sidebar-section">
-      <div class="sidebar-label">Plugins</div>
-      <div class="node-card" draggable="true" data-type="plugin" data-name="Figma"  data-icon="🎭"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">🎭</div><div class="nc-info"><div class="nc-name">Figma</div><div class="nc-desc">Design data</div></div></div>
-      <div class="node-card" draggable="true" data-type="plugin" data-name="Notion" data-icon="📓"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">📓</div><div class="nc-info"><div class="nc-name">Notion</div><div class="nc-desc">Notes / Docs</div></div></div>
-      <div class="node-card" draggable="true" data-type="plugin" data-name="Miro"   data-icon="🗺"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">🗺</div><div class="nc-info"><div class="nc-name">Miro</div><div class="nc-desc">Whiteboard</div></div></div>
+      <div class="sidebar-label">Business Plugins</div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Finance Plugin" data-icon="₿"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">₿</div><div class="nc-info"><div class="nc-name">Finance Plugin</div><div class="nc-desc">analysis, variance, close support</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Sales Ops Plugin" data-icon="↗"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">↗</div><div class="nc-info"><div class="nc-name">Sales Ops Plugin</div><div class="nc-desc">CRM hygiene / account plans</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="HR Plugin" data-icon="👥"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">👥</div><div class="nc-info"><div class="nc-name">HR Plugin</div><div class="nc-desc">people ops / policies / hiring</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Legal Plugin" data-icon="§"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">§</div><div class="nc-info"><div class="nc-name">Legal Plugin</div><div class="nc-desc">contracts / clauses / diligence</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Design Plugin" data-icon="◇"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">◇</div><div class="nc-info"><div class="nc-name">Design Plugin</div><div class="nc-desc">briefs, critique, asset generation</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Engineering Plugin" data-icon="{ }"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">{ }</div><div class="nc-info"><div class="nc-name">Engineering Plugin</div><div class="nc-desc">spec, code review, release notes</div></div></div>
+      <div class="node-card" draggable="true" data-type="plugin" data-name="Operations Plugin" data-icon="↻"><div class="nc-icon" style="background:var(--plugin-bg);color:var(--plugin)">↻</div><div class="nc-info"><div class="nc-name">Operations Plugin</div><div class="nc-desc">SOPs / vendor / process automation</div></div></div>
     </div>
     <!-- MCP -->
     <div class="sidebar-section">
       <div class="sidebar-label">MCP Servers</div>
-      <div class="node-card" draggable="true" data-type="mcp" data-name="GitHub MCP" data-icon="🐙"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">🐙</div><div class="nc-info"><div class="nc-name">GitHub MCP</div><div class="nc-desc">Repos / PRs</div></div></div>
-      <div class="node-card" draggable="true" data-type="mcp" data-name="Slack MCP"  data-icon="💬"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">💬</div><div class="nc-info"><div class="nc-name">Slack MCP</div><div class="nc-desc">Messaging</div></div></div>
-      <div class="node-card" draggable="true" data-type="mcp" data-name="Gmail MCP"  data-icon="📧"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">📧</div><div class="nc-info"><div class="nc-name">Gmail MCP</div><div class="nc-desc">Email</div></div></div>
-      <div class="node-card" draggable="true" data-type="mcp" data-name="DB MCP"     data-icon="🗄"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">🗄</div><div class="nc-info"><div class="nc-name">DB MCP</div><div class="nc-desc">Database</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Remote MCP Web" data-icon="☁"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">☁</div><div class="nc-info"><div class="nc-name">Remote MCP Web</div><div class="nc-desc">public URL custom connector</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Desktop Extension" data-icon="▤"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">▤</div><div class="nc-info"><div class="nc-name">Desktop Extension</div><div class="nc-desc">local files, localhost, OS tools</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Internal Knowledge MCP" data-icon="📚"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">📚</div><div class="nc-info"><div class="nc-name">Internal Knowledge MCP</div><div class="nc-desc">policy, wiki, SOP, playbooks</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Data Warehouse MCP" data-icon="▥"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">▥</div><div class="nc-info"><div class="nc-name">Data Warehouse MCP</div><div class="nc-desc">Snowflake / BigQuery / Postgres</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="CRM MCP" data-icon="$"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">$</div><div class="nc-info"><div class="nc-name">CRM MCP</div><div class="nc-desc">accounts, contacts, opportunities</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="ERP MCP" data-icon="▧"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">▧</div><div class="nc-info"><div class="nc-name">ERP MCP</div><div class="nc-desc">orders, inventory, procurement</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="HRIS MCP" data-icon="👤"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">👤</div><div class="nc-info"><div class="nc-name">HRIS MCP</div><div class="nc-desc">people data with scoped access</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Support MCP" data-icon="🎧"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">🎧</div><div class="nc-info"><div class="nc-name">Support MCP</div><div class="nc-desc">tickets, macros, escalation state</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="BI Dashboard MCP" data-icon="▦"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">▦</div><div class="nc-info"><div class="nc-name">BI Dashboard MCP</div><div class="nc-desc">metrics, charts, board reporting</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Browser Automation MCP" data-icon="⌁"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">⌁</div><div class="nc-info"><div class="nc-name">Browser Automation MCP</div><div class="nc-desc">approved web task execution</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Audit Log MCP" data-icon="✓"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">✓</div><div class="nc-info"><div class="nc-name">Audit Log MCP</div><div class="nc-desc">tool calls, approvals, evidence</div></div></div>
+    </div>
+    <!-- Governance -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Permissions & Governance</div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Organization Settings > Connectors" data-icon="🏢"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">🏢</div><div class="nc-info"><div class="nc-name">Org Connectors</div><div class="nc-desc">owner adds connectors for team</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Enterprise-managed Auth" data-icon="🔐"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">🔐</div><div class="nc-info"><div class="nc-name">Enterprise Auth</div><div class="nc-desc">org-level auth, user inherited access</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Verified-domain Restriction" data-icon="◈"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">◈</div><div class="nc-info"><div class="nc-name">Verified Domain</div><div class="nc-desc">prevent external Claude account linking</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Private Project Boundary" data-icon="□"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">□</div><div class="nc-info"><div class="nc-name">Private Project</div><div class="nc-desc">business connector content stays private</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Tool Permission: Always allow" data-icon="✓"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">✓</div><div class="nc-info"><div class="nc-name">Always allow</div><div class="nc-desc">trusted repeatable tool calls</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Tool Permission: Needs approval" data-icon="?"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">?</div><div class="nc-info"><div class="nc-name">Needs approval</div><div class="nc-desc">human gate before risky actions</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Tool Permission: Blocked" data-icon="×"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">×</div><div class="nc-info"><div class="nc-name">Blocked</div><div class="nc-desc">disable write/delete or unsafe tools</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Read-only Tool Scope" data-icon="R"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">R</div><div class="nc-info"><div class="nc-name">Read-only Scope</div><div class="nc-desc">search, summarize, retrieve only</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Write/Delete Tool Scope" data-icon="W"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">W</div><div class="nc-info"><div class="nc-name">Write/Delete Scope</div><div class="nc-desc">create, modify, delete with controls</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="OAuth Consent Review" data-icon="◎"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">◎</div><div class="nc-info"><div class="nc-name">OAuth Consent Review</div><div class="nc-desc">inspect requested scopes before connect</div></div></div>
+      <div class="node-card" draggable="true" data-type="mcp" data-name="Prompt Injection Review" data-icon="!"><div class="nc-icon" style="background:var(--mcp-bg);color:var(--mcp)">!</div><div class="nc-info"><div class="nc-name">Prompt Injection Review</div><div class="nc-desc">watch tool outputs and hidden instructions</div></div></div>
     </div>
     <!-- Skills -->
     <div class="sidebar-section">
       <div class="sidebar-label">Skills</div>
       <div class="node-card" draggable="true" data-type="skill" data-name="DOCX Skill" data-icon="📝"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">📝</div><div class="nc-info"><div class="nc-name">DOCX Skill</div><div class="nc-desc">Word document</div></div></div>
       <div class="node-card" draggable="true" data-type="skill" data-name="PPTX Skill" data-icon="📊"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">📊</div><div class="nc-info"><div class="nc-name">PPTX Skill</div><div class="nc-desc">Presentation</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="XLSX Skill" data-icon="▥"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">▥</div><div class="nc-info"><div class="nc-name">XLSX Skill</div><div class="nc-desc">spreadsheet analysis / cleanup</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="CSV Skill" data-icon=","><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">,</div><div class="nc-info"><div class="nc-name">CSV Skill</div><div class="nc-desc">bulk data transform / import prep</div></div></div>
       <div class="node-card" draggable="true" data-type="skill" data-name="Learn Skill" data-icon="🎓"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">🎓</div><div class="nc-info"><div class="nc-name">Learn Skill</div><div class="nc-desc">อธิบาย / สอน</div></div></div>
       <div class="node-card" draggable="true" data-type="skill" data-name="PDF Skill" data-icon="📑"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">📑</div><div class="nc-info"><div class="nc-name">PDF Skill</div><div class="nc-desc">PDF tools</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Finance Analyst Skill" data-icon="ƒ"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">ƒ</div><div class="nc-info"><div class="nc-name">Finance Analyst Skill</div><div class="nc-desc">variance, forecast, board pack</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Sales Brief Skill" data-icon="↗"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">↗</div><div class="nc-info"><div class="nc-name">Sales Brief Skill</div><div class="nc-desc">account plan / call prep</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="HR Policy Skill" data-icon="👥"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">👥</div><div class="nc-info"><div class="nc-name">HR Policy Skill</div><div class="nc-desc">policy answers / hiring packets</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Legal Review Skill" data-icon="§"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">§</div><div class="nc-info"><div class="nc-name">Legal Review Skill</div><div class="nc-desc">contract risk / clause compare</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Marketing Campaign Skill" data-icon="✦"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">✦</div><div class="nc-info"><div class="nc-name">Marketing Campaign Skill</div><div class="nc-desc">brief, copy, creative variants</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Support QA Skill" data-icon="🎧"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">🎧</div><div class="nc-info"><div class="nc-name">Support QA Skill</div><div class="nc-desc">case summary / macro quality</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Meeting Brief Skill" data-icon="📋"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">📋</div><div class="nc-info"><div class="nc-name">Meeting Brief Skill</div><div class="nc-desc">agenda, notes, action items</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Executive Summary Skill" data-icon="★"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">★</div><div class="nc-info"><div class="nc-name">Executive Summary Skill</div><div class="nc-desc">decision memo / board summary</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Procurement Skill" data-icon="☑"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">☑</div><div class="nc-info"><div class="nc-name">Procurement Skill</div><div class="nc-desc">vendor compare / approval packet</div></div></div>
+      <div class="node-card" draggable="true" data-type="skill" data-name="Risk & Compliance Skill" data-icon="⚖"><div class="nc-icon" style="background:var(--skill-bg);color:var(--skill)">⚖</div><div class="nc-info"><div class="nc-name">Risk & Compliance Skill</div><div class="nc-desc">control checks / evidence mapping</div></div></div>
     </div>
     <!-- Output -->
     <div class="sidebar-section">
@@ -384,14 +469,14 @@ header nav{display:flex;gap:6px;margin-left:auto}
     </svg>
     <div id="canvas-nodes"></div>
     <div class="canvas-hint" id="canvas-hint">
-      <h2>🧩 Task Flow Canvas</h2>
-      <p>ลาก component จาก sidebar มาวาง<br>ต่อ port เพื่อเชื่อม flow<br>คลิก 💬 บน node เพื่อ comment · ❤️ เพื่อโหวต</p>
+      <h2>Claude Cowork Business Canvas</h2>
+      <p>ลาก connector, MCP, plugin และ skill จาก sidebar มาวาง<br>ต่อ port เพื่อออกแบบ workflow สำหรับธุรกิจ<br>กด Claude Pack เพื่อโหลด blueprint ตัวอย่าง</p>
     </div>
   </div>
 
   <!-- RIGHT PANEL -->
   <div class="right-panel">
-    <div class="rp-title">📋 Nodes</div>
+    <div class="rp-title">Claude Flow Nodes</div>
     <div class="flow-list" id="flow-list">
       <div style="padding:16px 0;text-align:center;color:var(--text-dim);font-size:11px">ยังไม่มี nodes</div>
     </div>
@@ -425,6 +510,10 @@ header nav{display:flex;gap:6px;margin-left:auto}
 //  STATE
 // ══════════════════════════════════════════════
 const ME = { id: null, name: '', emoji: '🦊' };
+// Injected by GitHub Actions from repository secrets at deploy time
+const _DEPLOY_SUPABASE_URL = '%%SUPABASE_URL%%';
+const _DEPLOY_SUPABASE_KEY = '%%SUPABASE_KEY%%';
+
 let supabase = null;
 let channel  = null;
 const SESSION_ID = 'workshop-' + (new URLSearchParams(location.search).get('session') || 'main');
@@ -455,8 +544,10 @@ document.querySelectorAll('.avatar-opt').forEach(el => {
 // ══════════════════════════════════════════════
 function joinWorkshop() {
   const name  = document.getElementById('setup-name').value.trim();
-  const url   = document.getElementById('setup-url').value.trim();
-  const key   = document.getElementById('setup-key').value.trim();
+  const _injectedUrl = (!_DEPLOY_SUPABASE_URL.startsWith('%%')) ? _DEPLOY_SUPABASE_URL : '';
+  const _injectedKey = (!_DEPLOY_SUPABASE_KEY.startsWith('%%')) ? _DEPLOY_SUPABASE_KEY : '';
+  const url   = _injectedUrl || document.getElementById('setup-url').value.trim();
+  const key   = _injectedKey || document.getElementById('setup-key').value.trim();
   if (!name) { alert('กรุณาใส่ชื่อก่อนครับ'); return; }
 
   ME.id   = 'user-' + Math.random().toString(36).substr(2,8);
@@ -649,7 +740,7 @@ function createNode(type, name, icon, x, y, existingId, remote, owner, votes) {
   });
 
   makeDraggableNode(el, id);
-  el.querySelectorAll('.port').forEach(p => p.addEventListener('mousedown', portMouseDown));
+  el.querySelectorAll('.port').forEach(p => p.addEventListener('pointerdown', portPointerDown));
   el.addEventListener('mousedown', e => {
     if (e.target.classList.contains('port')||e.target.classList.contains('node-del')||e.target.classList.contains('fn-votes')) return;
     selectNode(id);
@@ -668,7 +759,7 @@ function createNode(type, name, icon, x, y, existingId, remote, owner, votes) {
 function makeDraggableNode(el, id) {
   let ox,oy;
   el.addEventListener('mousedown', e => {
-    if (e.target.classList.contains('port')||e.target.classList.contains('node-del')||e.target.classList.contains('fn-votes')) return;
+    if (wiringFrom||e.target.classList.contains('port')||e.target.classList.contains('node-del')||e.target.classList.contains('fn-votes')) return;
     e.preventDefault();
     const r=document.getElementById('canvas-wrap').getBoundingClientRect();
     ox=e.clientX-r.left-parseFloat(el.style.left);
@@ -719,49 +810,117 @@ function selectNode(id) {
 // ══════════════════════════════════════════════
 let wiringFrom=null;
 let wiringTarget=null;
+let wiringPointerId=null;
 
-function portMouseDown(e) {
-  e.preventDefault();e.stopPropagation();
-  if(e.target.dataset.side!=='out') return;
-  wiringFrom={nodeId:e.target.dataset.node,portEl:e.target};
-  const t=document.getElementById('temp-edge');
-  t.style.display='block';
-  const p=portCenter(e.target);
-  t.setAttribute('d',`M${p.x},${p.y}L${p.x},${p.y}`);
+function oppositeSide(side) {
+  return side === 'out' ? 'in' : 'out';
 }
 
-document.addEventListener('mousemove', e => {
+function findPortUnder(clientX,clientY,side) {
+  let best=null, bestDist=42;
+  document.querySelectorAll(`.port-${side}`).forEach(p=>{
+    const r=p.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const d=Math.hypot(clientX-cx,clientY-cy);
+    if(d<bestDist){bestDist=d;best=p;}
+  });
+  return best;
+}
+
+function findNodeUnder(clientX,clientY,excludeId,side) {
+  let best=null, bestDist=Infinity;
+  nodes.forEach(n=>{
+    if(n.id===excludeId) return;
+    const r=n.el.getBoundingClientRect();
+    if(clientX<r.left||clientX>r.right||clientY<r.top||clientY>r.bottom) return;
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const d=Math.hypot(clientX-cx,clientY-cy);
+    if(d<bestDist){bestDist=d;best=n;}
+  });
+  return best;
+}
+
+function findPortAtPoint(clientX,clientY,side) {
+  const pad=6;
+  for(const p of document.querySelectorAll(side ? `.port-${side}` : '.port')){
+    const r=p.getBoundingClientRect();
+    if(clientX>=r.left-pad&&clientX<=r.right+pad&&clientY>=r.top-pad&&clientY<=r.bottom+pad)
+      return p;
+  }
+  return null;
+}
+
+// Canvas-level capture listener — intercepts before node drag handlers
+// Uses tight hit-test so it only fires on/near a port, not on node body
+document.getElementById('canvas-wrap').addEventListener('pointerdown',e=>{
+  if(wiringFrom) return;
+  const port=findPortAtPoint(e.clientX,e.clientY);
+  if(!port) return;
+  e.preventDefault(); e.stopPropagation();
+  startWiring(port,e.pointerId);
+},true);
+
+function startWiring(portEl,pointerId) {
+  wiringFrom={nodeId:portEl.dataset.node,side:portEl.dataset.side,portEl};
+  wiringPointerId=pointerId;
+  const t=document.getElementById('temp-edge');
+  t.style.display='block';
+  const p=portCenter(portEl);
+  t.setAttribute('d',`M${p.x},${p.y}L${p.x},${p.y}`);
+  document.querySelectorAll(`.port-${oppositeSide(wiringFrom.side)}`).forEach(pi=>pi.classList.add('port-target'));
+  document.getElementById('canvas-wrap').style.cursor='crosshair';
+  portEl.setPointerCapture?.(pointerId);
+}
+
+function portPointerDown(e) {
+  e.preventDefault();e.stopPropagation();
+  startWiring(e.target,e.pointerId);
+}
+
+document.addEventListener('pointermove', e => {
   if(!wiringFrom) return;
   const r=document.getElementById('canvas-wrap').getBoundingClientRect();
   const p=portCenter(wiringFrom.portEl);
   const tx=e.clientX-r.left, ty=e.clientY-r.top;
   const dx=(tx-p.x)*.5;
-  document.getElementById('temp-edge').setAttribute('d',`M${p.x},${p.y}C${p.x+dx},${p.y}${tx-dx},${ty}${tx},${ty}`);
-  // track target port continuously so mouseup doesn't miss the small hit area
-  const over=document.elementFromPoint(e.clientX,e.clientY);
+  document.getElementById('temp-edge').setAttribute('d',`M ${p.x},${p.y} C ${p.x+dx},${p.y} ${tx-dx},${ty} ${tx},${ty}`);
   const prev=wiringTarget;
-  wiringTarget=(over?.classList.contains('port')&&over.dataset.side==='in'&&over.dataset.node!==wiringFrom.nodeId)?over:null;
-  if(prev!==wiringTarget){
-    if(prev) prev.style.transform='';
-    if(wiringTarget) wiringTarget.style.transform='translateY(-50%) scale(1.8)';
+  const targetSide=oppositeSide(wiringFrom.side);
+  const found=findPortUnder(e.clientX,e.clientY,targetSide);
+  const targetNode=findNodeUnder(e.clientX,e.clientY,wiringFrom.nodeId,targetSide);
+  wiringTarget=(found&&found.dataset.node!==wiringFrom.nodeId)
+    ? {nodeId:found.dataset.node,side:found.dataset.side,portEl:found}
+    : (targetNode ? {nodeId:targetNode.id,side:targetSide,portEl:targetNode.el.querySelector(`.port-${targetSide}`)} : null);
+  if(prev?.portEl!==wiringTarget?.portEl){
+    if(prev?.portEl) prev.portEl.style.transform='';
+    if(wiringTarget?.portEl) wiringTarget.portEl.style.transform='translateY(-50%) scale(2)';
   }
 });
 
-document.addEventListener('mouseup', e => {
+document.addEventListener('pointerup', e => {
   if(!wiringFrom) return;
   document.getElementById('temp-edge').style.display='none';
-  if(wiringTarget) wiringTarget.style.transform='';
-  const tgt=wiringTarget||document.elementFromPoint(e.clientX,e.clientY);
-  if(tgt?.classList.contains('port')&&tgt.dataset.side==='in') {
-    const toId=tgt.dataset.node;
-    if(toId!==wiringFrom.nodeId&&!edges.find(ed=>ed.from===wiringFrom.nodeId&&ed.to===toId)) {
-      const eid=createEdge(wiringFrom.nodeId,toId);
-      broadcast('edge_add',{id:eid,from:wiringFrom.nodeId,to:toId});
+  document.getElementById('canvas-wrap').style.cursor='';
+  document.querySelectorAll('.port').forEach(p=>{p.classList.remove('port-target');p.style.transform='';});
+  const targetSide=oppositeSide(wiringFrom.side);
+  const portTarget=findPortUnder(e.clientX,e.clientY,targetSide);
+  const nodeTarget=findNodeUnder(e.clientX,e.clientY,wiringFrom.nodeId,targetSide);
+  const targetId=wiringTarget?.nodeId||portTarget?.dataset.node||nodeTarget?.id;
+  if(targetId) {
+    const fromId=wiringFrom.side==='out' ? wiringFrom.nodeId : targetId;
+    const toId=wiringFrom.side==='out' ? targetId : wiringFrom.nodeId;
+    if(fromId!==toId&&!edges.find(ed=>ed.from===fromId&&ed.to===toId)) {
+      const eid=createEdge(fromId,toId);
+      broadcast('edge_add',{id:eid,from:fromId,to:toId});
       saveBoardState();
     }
   }
+  if(wiringFrom.portEl.hasPointerCapture?.(wiringPointerId)) {
+    wiringFrom.portEl.releasePointerCapture(wiringPointerId);
+  }
   wiringFrom=null;
   wiringTarget=null;
+  wiringPointerId=null;
 });
 
 function createEdge(from,to,existingId,remote) {
@@ -809,7 +968,7 @@ function drawEdge(id) {
   const p1=portCenter(fp),p2=portCenter(tp);
   const dx=(p2.x-p1.x)*.5;
   const path=document.getElementById(id);
-  if(path) path.setAttribute('d',`M${p1.x},${p1.y}C${p1.x+dx},${p1.y}${p2.x-dx},${p2.y}${p2.x},${p2.y}`);
+  if(path) path.setAttribute('d',`M ${p1.x},${p1.y} C ${p1.x+dx},${p1.y} ${p2.x-dx},${p2.y} ${p2.x},${p2.y}`);
 }
 
 function redrawEdges(){edges.forEach(e=>drawEdge(e.id));}
@@ -1004,13 +1163,25 @@ function copyInvite() {
 function loadExample() {
   clearCanvas(true);
   const items=[
-    {type:'trigger',name:'User Input', icon:'💬',x:60, y:120},
-    {type:'tool',   name:'Web Search', icon:'🔍',x:290,y:50},
-    {type:'mcp',    name:'GitHub MCP', icon:'🐙',x:290,y:180},
-    {type:'plugin', name:'Notion',     icon:'📓',x:290,y:300},
-    {type:'skill',  name:'DOCX Skill', icon:'📝',x:510,y:100},
-    {type:'output', name:'Response',   icon:'💡',x:710,y:100},
-    {type:'output', name:'Save File',  icon:'💾',x:710,y:260},
+    {type:'trigger',name:'Claude Chat +', icon:'+',x:40, y:140},
+    {type:'trigger',name:'Customize > Connectors', icon:'⚙',x:40, y:290},
+    {type:'tool',   name:'Connectors Directory', icon:'▦',x:250,y:70},
+    {type:'tool',   name:'Per-chat Connector Toggle', icon:'◉',x:250,y:185},
+    {type:'tool',   name:'Tool Access: On demand', icon:'O',x:250,y:300},
+    {type:'mcp',    name:'Tool Permission: Needs approval', icon:'?',x:250,y:415},
+    {type:'plugin', name:'Google Drive', icon:'📁',x:500,y:35},
+    {type:'plugin', name:'Gmail', icon:'✉',x:500,y:130},
+    {type:'plugin', name:'Slack', icon:'💬',x:500,y:225},
+    {type:'plugin', name:'Salesforce', icon:'$',x:500,y:320},
+    {type:'mcp',    name:'Data Warehouse MCP', icon:'▥',x:500,y:415},
+    {type:'mcp',    name:'Audit Log MCP', icon:'✓',x:735,y:415},
+    {type:'skill',  name:'Executive Summary Skill', icon:'★',x:750,y:45},
+    {type:'skill',  name:'Finance Analyst Skill', icon:'ƒ',x:750,y:160},
+    {type:'skill',  name:'Sales Brief Skill', icon:'↗',x:750,y:275},
+    {type:'skill',  name:'Risk & Compliance Skill', icon:'⚖',x:990,y:415},
+    {type:'output', name:'Response', icon:'💡',x:1010,y:95},
+    {type:'output', name:'Save File', icon:'💾',x:1010,y:230},
+    {type:'output', name:'Notify', icon:'🔔',x:1245,y:355},
   ];
   items.forEach(i=>{
     const id=createNode(i.type,i.name,i.icon,i.x,i.y);
@@ -1018,8 +1189,8 @@ function loadExample() {
   });
   setTimeout(()=>{
     const ids=nodes.map(n=>n.id);
-    if(ids.length>=7){
-      [[0,1],[0,2],[0,3],[1,4],[2,4],[4,5],[3,6]].forEach(([a,b])=>{
+    if(ids.length>=19){
+      [[0,2],[0,3],[0,4],[1,2],[1,5],[2,6],[2,7],[3,8],[3,9],[4,10],[5,11],[6,12],[7,12],[8,14],[9,14],[10,13],[11,15],[12,16],[13,17],[14,18],[15,17],[15,18]].forEach(([a,b])=>{
         const eid=createEdge(ids[a],ids[b]);
         broadcast('edge_add',{id:eid,from:ids[a],to:ids[b]});
       });
