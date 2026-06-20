@@ -291,8 +291,8 @@ header nav{display:flex;gap:6px;margin-left:auto}
 
     <div class="setup-divider"></div>
     <div class="setup-label" style="margin-bottom:4px">Supabase Config <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">(วาง Project URL + anon key)</span></div>
-    <input class="setup-input mono" id="setup-url" placeholder="https://xxxx.supabase.co">
-    <input class="setup-input mono" id="setup-key" placeholder="eyJhbGciOi... (anon public key)">
+    <input class="setup-input mono" id="setup-url" placeholder="https://hnsldecqxqwbjkxkpeob.supabase.co" show="false">
+    <input class="setup-input mono" id="setup-key" placeholder="sb_publishable_MiHn8C1qAlHcCuW0WPQIJQ_Fi1EjYfg" show="false">
 
     <button class="setup-btn" id="join-btn" onclick="joinWorkshop()">เข้าร่วม Workshop →</button>
     <div class="setup-note">
@@ -718,6 +718,7 @@ function selectNode(id) {
 //  EDGE WIRING
 // ══════════════════════════════════════════════
 let wiringFrom=null;
+let wiringTarget=null;
 
 function portMouseDown(e) {
   e.preventDefault();e.stopPropagation();
@@ -736,21 +737,31 @@ document.addEventListener('mousemove', e => {
   const tx=e.clientX-r.left, ty=e.clientY-r.top;
   const dx=(tx-p.x)*.5;
   document.getElementById('temp-edge').setAttribute('d',`M${p.x},${p.y}C${p.x+dx},${p.y}${tx-dx},${ty}${tx},${ty}`);
+  // track target port continuously so mouseup doesn't miss the small hit area
+  const over=document.elementFromPoint(e.clientX,e.clientY);
+  const prev=wiringTarget;
+  wiringTarget=(over?.classList.contains('port')&&over.dataset.side==='in'&&over.dataset.node!==wiringFrom.nodeId)?over:null;
+  if(prev!==wiringTarget){
+    if(prev) prev.style.transform='';
+    if(wiringTarget) wiringTarget.style.transform='translateY(-50%) scale(1.8)';
+  }
 });
 
 document.addEventListener('mouseup', e => {
   if(!wiringFrom) return;
   document.getElementById('temp-edge').style.display='none';
-  const tgt=document.elementFromPoint(e.clientX,e.clientY);
+  if(wiringTarget) wiringTarget.style.transform='';
+  const tgt=wiringTarget||document.elementFromPoint(e.clientX,e.clientY);
   if(tgt?.classList.contains('port')&&tgt.dataset.side==='in') {
     const toId=tgt.dataset.node;
-    if(toId!==wiringFrom.nodeId&&!edges.find(e=>e.from===wiringFrom.nodeId&&e.to===toId)) {
+    if(toId!==wiringFrom.nodeId&&!edges.find(ed=>ed.from===wiringFrom.nodeId&&ed.to===toId)) {
       const eid=createEdge(wiringFrom.nodeId,toId);
       broadcast('edge_add',{id:eid,from:wiringFrom.nodeId,to:toId});
       saveBoardState();
     }
   }
   wiringFrom=null;
+  wiringTarget=null;
 });
 
 function createEdge(from,to,existingId,remote) {
