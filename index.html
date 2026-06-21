@@ -873,7 +873,9 @@ function setupRealtimeChannel() {
   channel = supabase.channel(SESSION_ID, {config:{presence:{key:ME.id}}});
 
   channel
-    .on('presence','sync', updatePresence)
+    .on('presence','sync',  updatePresence)
+    .on('presence','join',  ({key, newPresences}) => { console.log('[presence join]', key, newPresences); updatePresence(); })
+    .on('presence','leave', ({key, leftPresences}) => { console.log('[presence leave]', key, leftPresences); updatePresence(); })
     .on('broadcast',{event:'node_add'},    e => remoteAddNode(e.payload))
     .on('broadcast',{event:'node_move'},   e => remoteMove(e.payload))
     .on('broadcast',{event:'node_delete'}, e => remoteDelete(e.payload))
@@ -883,6 +885,7 @@ function setupRealtimeChannel() {
     .on('broadcast',{event:'comment'},     e => remoteComment(e.payload))
     .on('broadcast',{event:'vote'},        e => remoteVote(e.payload))
     .subscribe(status => {
+      console.log('[channel status]', status, 'session:', SESSION_ID);
       if (status === 'SUBSCRIBED') {
         channel.track({name: ME.name, emoji: ME.emoji, color: PEER_COLORS[Math.floor(Math.random()*PEER_COLORS.length)]});
       }
@@ -921,6 +924,7 @@ async function saveBoardState() {
 function updatePresence() {
   if (!channel) return;
   const state = channel.presenceState();
+  console.log('[updatePresence] state:', state);
   const online = Object.values(state).flat();
   document.getElementById('stat-online').textContent = online.length;
   renderParticipants(online);
