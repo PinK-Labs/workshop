@@ -854,7 +854,7 @@ function joinWorkshop() {
 function initSupabase(url, anonKey) {
   // Dynamically load Supabase client
   const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.38.4/umd/supabase.min.js';
+  script.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js';
   script.onload = () => {
     supabase = window.supabase.createClient(url, anonKey);
     document.getElementById('header-status').textContent = 'Live';
