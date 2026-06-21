@@ -603,6 +603,7 @@ const _DEPLOY_SUPABASE_KEY = (typeof _SUPABASE_KEY !== 'undefined') ? _SUPABASE_
 let supabaseClient = null;
 let channel  = null;
 let SESSION_ID = 'workshop-' + (new URLSearchParams(location.search).get('session') || '');
+let lastBoardStateAt = 0;
 
 // ══════════════════════════════════════════════
 //  CANVAS TRANSFORM (zoom & pan)
@@ -745,6 +746,7 @@ function saveTitle() {
   setCanvasTitle(inp.value.trim());
   inp.style.display = 'none';
   d.style.display   = '';
+  broadcast('title_update', {title: canvasTitle});
   saveBoardState();
 }
 
@@ -797,12 +799,16 @@ let nodes  = [];   // {id,type,name,icon,x,y,el,votes,comments,owner}
 let edges  = [];   // {id,from,to}
 let peers  = {};   // peerId → {name,emoji,cursorEl}
 let peerHeartbeat = null;
-let nodeSeq = 0, edgeSeq = 0;
 
 const TYPE_COLOR = {trigger:'var(--trigger)',tool:'var(--tool)',plugin:'var(--plugin)',mcp:'var(--mcp)',skill:'var(--skill)',output:'var(--output)'};
 const TYPE_BG    = {trigger:'var(--trigger-bg)',tool:'var(--tool-bg)',plugin:'var(--plugin-bg)',mcp:'var(--mcp-bg)',skill:'var(--skill-bg)',output:'var(--output-bg)'};
 const TYPE_LABEL = {trigger:'TRIGGER',tool:'TOOL',plugin:'PLUGIN',mcp:'MCP',skill:'SKILL',output:'OUTPUT'};
 const PEER_COLORS = ['#4f8ef7','#ae63f5','#12b981','#f59e0b','#f03e3e','#06b6d4','#ec4899','#84cc16'];
+
+function makeId(prefix) {
+  const peerPart = (ME.id || 'local').replace(/[^a-z0-9-]/gi, '');
+  return `${prefix}-${peerPart}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
+}
 
 // ══════════════════════════════════════════════
 //  AVATAR SELECT
@@ -904,6 +910,9 @@ function setupRealtimeChannel() {
     .on('broadcast',{event:'node_delete'}, e => remoteDelete(e.payload))
     .on('broadcast',{event:'edge_add'},    e => remoteEdge(e.payload))
     .on('broadcast',{event:'edge_delete'}, e => remoteEdgeDel(e.payload))
+    .on('broadcast',{event:'canvas_clear'}, e => remoteClearCanvas(e.payload))
+    .on('broadcast',{event:'title_update'}, e => remoteTitleUpdate(e.payload))
+    .on('broadcast',{event:'state_replace'}, e => remoteStateReplace(e.payload))
     .on('broadcast',{event:'cursor'},      e => remoteCursor(e.payload))
     .on('broadcast',{event:'comment'},     e => remoteComment(e.payload))
     .on('broadcast',{event:'vote'},        e => remoteVote(e.payload))
@@ -927,24 +936,42 @@ async function loadBoardState() {
     const {data} = await supabaseClient.from('board_state').select('*').eq('session_id', SESSION_ID).single();
     if (data?.state) {
       const state = JSON.parse(data.state);
-      clearCanvas(true);
-      if (state.title) setCanvasTitle(state.title);
-      state.nodes?.forEach(n => createNode(n.type,n.name,n.icon,n.x,n.y,n.id,true,n.owner||'',n.votes||0));
-      setTimeout(()=>{
-        state.edges?.forEach(e => createEdge(e.from,e.to,e.id,true));
-      },100);
+      applyBoardState(state);
     }
   } catch(e) {}
 }
 
 async function saveBoardState() {
   if (!supabaseClient) return;
-  const state = {
+  const state = getBoardState();
+  lastBoardStateAt = state.updatedAt;
+  broadcast('state_replace', state);
+  try {
+    await supabaseClient.from('board_state').upsert({session_id:SESSION_ID, state:JSON.stringify(state)},{onConflict:'session_id'});
+  } catch(e) {
+    console.warn('[saveBoardState] failed', e);
+  }
+}
+
+function getBoardState() {
+  return {
     title: canvasTitle,
-    nodes: nodes.map(({id,type,name,icon,x,y,owner,votes})=>({id,type,name,icon,x,y,owner,votes})),
+    updatedAt: Date.now(),
+    nodes: nodes.map(({id,type,name,icon,x,y,owner,votes,comments})=>({id,type,name,icon,x,y,owner,votes,comments:comments||[]})),
     edges: edges.map(({id,from,to})=>({id,from,to}))
   };
-  await supabaseClient.from('board_state').upsert({session_id:SESSION_ID, state:JSON.stringify(state)},{onConflict:'session_id'});
+}
+
+function applyBoardState(state) {
+  if(state.updatedAt && state.updatedAt < lastBoardStateAt) return;
+  lastBoardStateAt = state.updatedAt || Date.now();
+  clearCanvas(true);
+  setCanvasTitle(state.title || '');
+  state.nodes?.forEach(n => createNode(n.type,n.name,n.icon,n.x,n.y,n.id,true,n.owner||'',n.votes||0,n.comments||[]));
+  setTimeout(()=>{
+    state.edges?.forEach(e => createEdge(e.from,e.to,e.id,true));
+    redrawEdges();
+  },50);
 }
 
 // ══════════════════════════════════════════════
@@ -1075,10 +1102,11 @@ function setupDragDrop() {
 // ══════════════════════════════════════════════
 //  CREATE NODE
 // ══════════════════════════════════════════════
-function createNode(type, name, icon, x, y, existingId, remote, owner, votes) {
-  const id = existingId || ('n'+(++nodeSeq));
+function createNode(type, name, icon, x, y, existingId, remote, owner, votes, comments) {
+  const id = existingId || makeId('n');
   owner = owner || ME.name;
   votes = votes || 0;
+  comments = Array.isArray(comments) ? comments : [];
 
   const el = document.createElement('div');
   el.className = `flow-node type-${type}`;
@@ -1122,9 +1150,11 @@ function createNode(type, name, icon, x, y, existingId, remote, owner, votes) {
   });
 
   document.getElementById('canvas-nodes').appendChild(el);
-  nodes.push({id,type,name,icon,x,y,el,votes,comments:[],owner});
+  nodes.push({id,type,name,icon,x,y,el,votes,comments,owner});
+  updateCommentBadge(id, comments.length);
   document.getElementById('canvas-hint').style.opacity='0';
   updatePanel();
+  redrawEdges();
   return id;
 }
 
@@ -1286,8 +1316,10 @@ document.addEventListener('pointerup', e => {
     const toId=wiringFrom.side==='out' ? targetId : wiringFrom.nodeId;
     if(fromId!==toId&&!edges.find(ed=>ed.from===fromId&&ed.to===toId)) {
       const eid=createEdge(fromId,toId);
-      broadcast('edge_add',{id:eid,from:fromId,to:toId});
-      saveBoardState();
+      if(eid) {
+        broadcast('edge_add',{id:eid,from:fromId,to:toId});
+        saveBoardState();
+      }
     }
   }
   if(wiringFrom.portEl.hasPointerCapture?.(wiringPointerId)) {
@@ -1299,7 +1331,9 @@ document.addEventListener('pointerup', e => {
 });
 
 function createEdge(from,to,existingId,remote) {
-  const id=existingId||('e'+(++edgeSeq));
+  if(!nodes.find(n=>n.id===from)||!nodes.find(n=>n.id===to)) return null;
+  if(edges.find(ed=>ed.id===existingId)||edges.find(ed=>ed.from===from&&ed.to===to)) return existingId || null;
+  const id=existingId||makeId('e');
   const fromNode=nodes.find(n=>n.id===from);
   const color=TYPE_COLOR[fromNode?.type]||'#6b7494';
   const markerType=fromNode?.type||'trigger';
@@ -1430,7 +1464,7 @@ function renderComments(comments) {
 function sendComment() {
   const input=document.getElementById('cp-input');
   const text=input.value.trim(); if(!text||!activeCommentNodeId) return;
-  const comment={author:ME.name,emoji:ME.emoji,text,color:PEER_COLORS[0],ts:Date.now()};
+  const comment={author:ME.name,emoji:ME.emoji,text,color:ME.color,ts:Date.now()};
   const n=nodes.find(n=>n.id===activeCommentNodeId);
   if(!n) return;
   if(!n.comments) n.comments=[];
@@ -1480,10 +1514,28 @@ function remoteDelete({id}) {
 }
 function remoteEdge({id,from,to}) {
   if(edges.find(e=>e.id===id)) return;
-  createEdge(from,to,id,true);
+  if(!createEdge(from,to,id,true)) {
+    setTimeout(()=>createEdge(from,to,id,true),250);
+  }
 }
 function remoteEdgeDel({id}) {
   removeEdge(id);
+}
+
+function remoteClearCanvas({peerId}) {
+  if(peerId===ME.id) return;
+  clearCanvas(true);
+  showToast('Canvas cleared by another participant');
+}
+
+function remoteTitleUpdate({peerId,title}) {
+  if(peerId===ME.id) return;
+  setCanvasTitle(title || '');
+}
+
+function remoteStateReplace(state) {
+  if(state.peerId===ME.id) return;
+  applyBoardState(state);
 }
 
 // ══════════════════════════════════════════════
@@ -1522,14 +1574,16 @@ function clearCanvas(silent) {
   nodes=[];
   document.getElementById('edges-group').innerHTML='';
   edges=[];
-  nodeSeq=0;edgeSeq=0;
   document.getElementById('canvas-hint').style.opacity='1';
   updatePanel();
-  if(!silent) {saveBoardState();}
+  if(!silent) {
+    broadcast('canvas_clear', {});
+    saveBoardState();
+  }
 }
 
 function exportFlow() {
-  const data={session:SESSION_ID,nodes:nodes.map(({id,type,name,icon,x,y,votes,owner})=>({id,type,name,icon,x,y,votes,owner})),edges:edges.map(({id,from,to})=>({id,from,to}))};
+  const data={session:SESSION_ID,...getBoardState()};
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
   a.download='taskflow-'+SESSION_ID+'.json';
@@ -1543,6 +1597,7 @@ function copyInvite() {
 
 function loadExample() {
   clearCanvas(true);
+  broadcast('canvas_clear', {});
   const items=[
     {type:'trigger',name:'Claude Chat +', icon:'+',x:40, y:140},
     {type:'trigger',name:'Customize > Connectors', icon:'⚙',x:40, y:290},
@@ -1573,7 +1628,7 @@ function loadExample() {
     if(ids.length>=19){
       [[0,2],[0,3],[0,4],[1,2],[1,5],[2,6],[2,7],[3,8],[3,9],[4,10],[5,11],[6,12],[7,12],[8,14],[9,14],[10,13],[11,15],[12,16],[13,17],[14,18],[15,17],[15,18]].forEach(([a,b])=>{
         const eid=createEdge(ids[a],ids[b]);
-        broadcast('edge_add',{id:eid,from:ids[a],to:ids[b]});
+        if(eid) broadcast('edge_add',{id:eid,from:ids[a],to:ids[b]});
       });
     }
     saveBoardState();
