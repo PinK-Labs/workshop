@@ -26,10 +26,27 @@ jobs:
 
       - name: Generate Supabase config
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          _SUPABASE_URL: ${{ secrets['_SUPABASE_URL'] }}
+          _SUPABASE_KEY: ${{ secrets['_SUPABASE_KEY'] }}
         run: |
-          printf 'var _SUPABASE_URL = "%s";\nvar _SUPABASE_KEY = "%s";\n' "$SUPABASE_URL" "$SUPABASE_KEY" > supabase-config.js
+          if [ -z "$_SUPABASE_URL" ] || [ -z "$_SUPABASE_KEY" ]; then
+            echo "Missing GitHub environment secrets: _SUPABASE_URL and/or _SUPABASE_KEY" >&2
+            exit 1
+          fi
+
+          node <<'NODE'
+          const fs = require('fs');
+
+          fs.writeFileSync(
+            'supabase-config.js',
+            [
+              `window._SUPABASE_URL = ${JSON.stringify(process.env._SUPABASE_URL)};`,
+              `window._SUPABASE_KEY = ${JSON.stringify(process.env._SUPABASE_KEY)};`,
+              '',
+            ].join('\n')
+          );
+          NODE
+
           echo "Generated supabase-config.js ($(wc -c < supabase-config.js) bytes)"
 
       - name: Setup Pages

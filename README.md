@@ -42,3 +42,12 @@ This workshop intentionally includes two kinds of nodes:
 - Business-use connector candidates that should be checked against the live `Connectors Directory` in the user's Claude account because availability can vary by plan, region, organization policy, and directory updates.
 
 Open `index.html` in a browser, join in demo mode, then click `Claude Pack` to load a ready-made business workflow blueprint.
+
+## GitHub Pages Supabase Config
+
+Deploy workflow reads Supabase config from GitHub Environment Secrets in the `github-pages` environment:
+
+- `_SUPABASE_URL`
+- `_SUPABASE_KEY`
+
+The workflow generates `supabase-config.js` during deploy, so Supabase credentials should not be committed into `index.html`.

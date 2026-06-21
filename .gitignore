@@ -3,3 +3,4 @@
 *.local
 secrets.*
 config.local.*
+supabase-config.js
