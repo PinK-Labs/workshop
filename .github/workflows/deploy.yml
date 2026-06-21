@@ -24,19 +24,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Inject Supabase secrets into index.html
+      - name: Generate Supabase config
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python3 -c "
-          import os, sys
-          content = open('index.html', encoding='utf-8').read()
-          content = content.replace('%%SUPABASE_URL%%', os.environ['SUPABASE_URL'])
-          content = content.replace('%%SUPABASE_KEY%%', os.environ['SUPABASE_KEY'])
-          open('index.html', 'w', encoding='utf-8').write(content)
-          print('Replaced:', content.count('supabase.co'), 'URL occurrences')
-          "
+          printf 'var _SUPABASE_URL = "%s";\nvar _SUPABASE_KEY = "%s";\n' "$SUPABASE_URL" "$SUPABASE_KEY" > supabase-config.js
+          echo "Generated supabase-config.js ($(wc -c < supabase-config.js) bytes)"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
