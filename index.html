@@ -600,7 +600,7 @@ const _DEPLOY_SUPABASE_KEY = '%%SUPABASE_KEY%%';
 
 let supabase = null;
 let channel  = null;
-const SESSION_ID = 'workshop-' + (new URLSearchParams(location.search).get('session') || 'main');
+let SESSION_ID = 'workshop-' + (new URLSearchParams(location.search).get('session') || '');
 
 // ══════════════════════════════════════════════
 //  CANVAS TRANSFORM (zoom & pan)
@@ -826,6 +826,13 @@ function joinWorkshop() {
 
   ME.id   = 'user-' + Math.random().toString(36).substr(2,8);
   ME.name = name;
+
+  // If no session in URL, generate a unique room ID and update the URL
+  if (!SESSION_ID || SESSION_ID === 'workshop-') {
+    SESSION_ID = 'workshop-' + Math.random().toString(36).substr(2,8);
+    const newUrl = location.origin + location.pathname + '?session=' + SESSION_ID.replace('workshop-', '');
+    history.replaceState(null, '', newUrl);
+  }
 
   document.getElementById('setup-screen').style.display = 'none';
   if (topic) setCanvasTitle(topic);
